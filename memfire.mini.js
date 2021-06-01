@@ -12,10 +12,11 @@ var memfire = {
   host     : 'localhost',
   user     : 'root',
   password : '123456',
-  database : 'test'
+  database : 'test',
+  port     : '5433'
 });
 var       = require('pg');
-var connerct = "tcp://"+memfire.password+":"+memfire.user+"@"+memfire.host+"/"+memfire.database
+var connerct = "tcp://"+memfire.password+":"+memfire.user+"@"+memfire.host+":"+memfire.port+"/"+memfire.database
 var client =  new pg.Client(conString);
 client.connect(function(error, results){
   if (error) {
