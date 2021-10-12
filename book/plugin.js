@@ -1,5 +1,4 @@
 var gitbook = window.gitbook;
-
 /*
 <!-- Start of CuterCounter Code -->
 <a href="http://www.cutercounter.com/" target="_blank"><img src="http://www.cutercounter.com/hit.php?id=gmvufxqck&nd=1&style=116" border="0" alt="visitor counter"></a>
@@ -13,10 +12,25 @@ var iconSVg = '<svg t="1543310294340" \
             fill="#CCC" p-id="1105"></path></svg>'
 
 require(["gitbook", "jQuery"], function (gitbook, $) {
+  var app_url = ''
+  var app_key = ''
+  var client
+  gitbook.events.bind("start", function(e, config) {
+    app_url = config.pageview.app_url
+    app_key = config.pageview.app_key
+    const { createClient } = supabase
+    client = createClient(app_url, app_key)
+  })
+  
   gitbook.events.bind("page.change", function() {
+    var url = location.href.replace(/^http:\/\/[^/]+/, "").trim();
+    url = decodeURI(url);
+    var s = url.split("/").pop();
+    var title = s.replace(".html", "");
+    var time = 0;
+
     var bookHeader = $('.book-header')
     var lastChild = bookHeader.children().last()
-
     var renderWrapper = $('<div class="page-view-wrapper dropdown pull-left">\
         <span class="btn toggle-dropdown">'+ iconSVg + '</span>\
         <span class="page-view-counter" title="阅读数">-</span>\
@@ -28,34 +42,45 @@ require(["gitbook", "jQuery"], function (gitbook, $) {
       bookHeader.append(renderWrapper)
     }
 
-    var Counter = function (method, url, data) {
-      return $.ajax({
-        method: method,
-        url : `http://127.0.0.1:8080${url}`,
-        data: data,
-      });
-    };
-
-    var url = location.href.replace(/^http:\/\/[^/]+/, "").trim();
-    url = decodeURI(url);
-    var s = url.split("/").pop();
-    var title = s.replace(".html", "");
-    var time = 0;
-
-    Counter('get', '/counter', { url:  url  }).done(function (results ) {
-        console.log(results)
-        if (results.time > 0) {
-        time = results.time+1;
-        Counter('put', `/counter`, {url: url, time: time }).done(function () {
-          console.log(time);
-          renderWrapper.find('.page-view-counter').html(time)
-        })
-      } else {
-        Counter('post', '/counter', { title: title, url: url, time: 1}).done(function ({ results }) {
-            renderWrapper.find('.page-view-counter').html(1)
-        })
+    const AddCounter = async (id, time) => {
+      console.log("add counter")
+      try {
+        var body  = await client.from('counter').update({ time: time }).eq('id', id)
+        console.log(body)
+        renderWrapper.find('.page-view-counter').html(time)
+      } catch (error) {
+        console.log('error', error)
       }
-    });
+    }
 
+    const InsertCounter = async(url, title) => {
+      console.log("insert counter")
+      try {
+        body  = await client
+          .from('counter')
+          .insert({ url:url, time: 1 , title:title})
+          .single()
+          console.log(body)
+          renderWrapper.find('.page-view-counter').html(1)
+      } catch (error) {
+        console.log('error', error)
+      }
+    }
+    
+    const fetchCounter = async () => {
+      let { error, data } = await client.from('counter').select().eq('url', url).single()
+      if (error) {
+        console.log(error.message)
+        InsertCounter(url, title)
+        return
+      }
+      if (data) {
+        AddCounter(data.id, data.time+1) 
+      } else {
+        InsertCounter(url, title)
+      }
+    }
+
+  fetchCounter();
   })
 });

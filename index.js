@@ -7,5 +7,12 @@ module.exports = {
         css: [
             "plugin.css"
         ]
+    },
+    hooks: {
+      'page:before': function(page) {
+        var str = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>'
+        page.content += str
+        return page
+      }
     }
 };
