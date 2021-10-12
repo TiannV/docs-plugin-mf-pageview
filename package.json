@@ -1,6 +1,6 @@
 {
   "name": "gitbook-plugin-mf-pageview",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "gitbook plugin of memfire integration for pageview",
   "main": "index.js",
   "scripts": {
